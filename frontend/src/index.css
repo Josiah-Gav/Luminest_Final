@@ -1,0 +1,10 @@
+@import "tailwindcss";
+
+/* Brand tokens: each becomes utility classes, e.g. bg-brand-blue, text-ink, font-display. */
+@theme {
+    --color-brand-red: #c1121f;
+    --color-brand-blue: #1d4ed8;
+    --color-ink: #111827;
+    --font-display: "Playfair Display", serif;
+    --font-sans: "Source Sans 3", sans-serif;
+}

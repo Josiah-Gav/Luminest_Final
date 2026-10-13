@@ -24,7 +24,7 @@ Real-estate management system for one subdivision: house reservations and purcha
 
 ## Status
 
-The repo is a fresh Laravel 12 skeleton. No phase has been started yet; the next step is Phase 0 (plan §7).
+Phase 0 (scaffold) is done: Sanctum SPA cookie auth, CORS, Pest 3, and the React app in `frontend/` (React 19, Vite 8, Tailwind v4, ESLint + Prettier). There are no app migrations or models yet, and `SESSION_DRIVER=file` until the Phase 1 tables exist. The next step is Phase 1 (Database, plan §7).
 
 ## Commands (after Phase 0)
 

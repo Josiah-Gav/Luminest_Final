@@ -55,14 +55,14 @@ With fewer than six members, pair modules: M1 alone; M2 + M3; M4 alone; M5 + M6.
 | Repo layout | This repo (`Luminest_Final`): Laravel at the root, React in `frontend/`. The legacy app stays in the separate [`Josiah-Gav/Luminest`](https://github.com/Josiah-Gav/Luminest) repo. | One repo to submit; the old app stays available for reference without cluttering this one |
 | Laravel | 12.x, PHP 8.2+ | Current LTS-track version |
 | API auth | **Laravel Sanctum, SPA cookie auth** (stateful, CSRF-protected) | Safer than storing tokens in localStorage; works with Socialite redirects |
-| React tooling | **Vite + React 18 + JavaScript (JSX)** | The brief says "React JS". TypeScript is optional; only adopt it if the whole team is comfortable explaining it. |
-| Routing (FE) | React Router 6 | Standard |
+| React tooling | **Vite 8 + React 19 + JavaScript (JSX)** | The brief says "React JS". TypeScript is optional; only adopt it if the whole team is comfortable explaining it. |
+| Routing (FE) | React Router 7 (`react-router-dom`) | Standard |
 | Server state (FE) | **TanStack Query** + **axios** | Caching, loading/error states, refetch-on-interval (replaces the legacy 10-second polling) |
 | Forms (FE) | react-hook-form | Less boilerplate. Laravel 422 errors map onto fields. |
 | Styling / UI | **Tailwind CSS v4** (`@tailwindcss/vite`) + **Headless UI** (modals, dropdowns, menus, transitions) + **Heroicons** + `clsx` | The team already knows Tailwind. Full design control for the Design score. Headless UI supplies accessible interactive pieces without imposing a look. |
 | Notifications (FE) | react-hot-toast | Feedback on every action, styled with Tailwind classes |
-| DB | MySQL 8, database `luminest_v2` (do not reuse the legacy DB) | Clean schema, seeded from scratch |
-| Tests | Pest (backend feature tests) | Protects the business rules during refactors |
+| DB | XAMPP's MySQL (MariaDB 10.4, port 3309), database `luminest_v2` (do not reuse the legacy DB) | Clean schema, seeded from scratch |
+| Tests | Pest 3 (backend feature tests; Pest 4 needs PHP 8.3) | Protects the business rules during refactors |
 | Lint/format | Laravel Pint (PSR-12) · ESLint + Prettier | Rubric: coding standard |
 
 ### Request flow (the MVC story for the presentation)
@@ -294,7 +294,7 @@ Phases build modules in dependency order: Phases 0–1 are shared foundations, P
 | Phase | Scope | Acceptance criteria |
 |---|---|---|
 | **0. Scaffold** | Laravel 12 is already installed at the root. Add Sanctum (`php artisan install:api`), CORS + `SANCTUM_STATEFUL_DOMAINS`, Pint, Pest; remove the default Tailwind/Blade front-end assets (`resources/js`, `resources/css`, root `package.json`/`vite.config.js`), since React has its own Vite setup (Tailwind moves into `frontend/`). `frontend/`: Vite React, Tailwind v4 (`@tailwindcss/vite`) with brand tokens in `src/index.css`, Headless UI, Heroicons, clsx, react-hot-toast, React Router, TanStack Query, axios (`withCredentials`, `withXSRFToken`), ESLint + Prettier with `prettier-plugin-tailwindcss`. `.env.example` for both. README with setup commands. | `php artisan serve` + `npm run dev` both run. Frontend calls `GET /api/user` and gets 401. Lint passes. |
-| **1. Database** | Enums, migrations, models + relationships + casts + scopes, factories, all seeders | `migrate:fresh --seed` succeeds. 870 houses. One user per role. Tinker relationships work. |
+| **1. Database** | Enums, migrations, models + relationships + casts + scopes, factories, all seeders. Keep Laravel's default `users`/`cache`/`jobs` migrations (they also create `sessions`, `cache` and `jobs`): `CACHE_STORE` and `QUEUE_CONNECTION` are still `database`, and Phase 2 login throttling uses the cache. | `migrate:fresh --seed` succeeds. 870 houses. One user per role. Tinker relationships work. |
 | **2. Auth & shell** | Register/login/logout/user/profile/password endpoints + tests. `role` middleware. React AuthProvider, Login, Register, Profile, AppLayout with role sidebar, ProtectedRoute/RoleRoute, role redirect, 404 page. | Each seeded user logs in and lands on their dashboard. A wrong role gets 403 (API) or a redirect (UI). Inactive users cannot log in. |
 | **3. Catalog & reservations** | House-type endpoints, ReservationService (reserve/cancel/accept/reject/pay) + Policy + tests. Landing, house detail, reserve flow, my reservations, PM reservations page. | Full §4.2 flow works in the UI. Tests cover double booking, reject releasing the unit, pay promoting to tenant and creating a Payment. |
 | **4. Maintenance** | MaintenanceService (submit/assign/progress/resolve) + Policy + tests. Tenant pages, staff pages, PM queue + history. | Full §4.3 flow works. Staff cannot see or update unassigned requests (test). Expertise rule enforced (test). |

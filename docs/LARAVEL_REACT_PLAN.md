@@ -38,8 +38,8 @@
 | Routing (FE) | React Router 6 | Standard |
 | Server state (FE) | **TanStack Query** + **axios** | Caching, loading/error states, refetch-on-interval (replaces the legacy 10-second polling) |
 | Forms (FE) | react-hook-form | Less boilerplate. Laravel 422 errors map onto fields. |
-| UI kit | **Bootstrap 5 + react-bootstrap** + Bootstrap Icons | The team already knows Bootstrap from the legacy app, which keeps the brand look |
-| Notifications (FE) | react-hot-toast (or react-bootstrap Toast) | Feedback on every action |
+| Styling / UI | **Tailwind CSS v4** (`@tailwindcss/vite`) + **Headless UI** (modals, dropdowns, menus, transitions) + **Heroicons** + `clsx` | The team already knows Tailwind. Full design control for the Design score. Headless UI supplies accessible interactive pieces without imposing a look. |
+| Notifications (FE) | react-hot-toast | Feedback on every action, styled with Tailwind classes |
 | DB | MySQL 8, database `luminest_v2` (do not reuse the legacy DB) | Clean schema, seeded from scratch |
 | Tests | Pest (backend feature tests) | Protects the business rules during refactors |
 | Lint/format | Laravel Pint (PSR-12) · ESLint + Prettier | Rubric: coding standard |
@@ -102,7 +102,7 @@ Say this explicitly in the video.
         ├── auth/              # AuthProvider, useAuth, ProtectedRoute, RoleRoute
         ├── components/
         │   ├── layout/        # AppLayout, Sidebar (role-based menu), Topbar, PublicLayout
-        │   └── ui/            # StatusBadge, PriorityBadge, DataTable, SearchFilterBar, ConfirmDialog, EmptyState, Pagination
+        │   └── ui/            # Button, Input, Card, Badge, StatusBadge, DataTable, SearchFilterBar, ConfirmDialog (Headless UI), EmptyState, Pagination
         ├── pages/
         │   ├── public/        # Landing, HouseTypeDetail, Login, Register, OAuthCallback, NotFound
         │   ├── prospect/      # Dashboard, ReserveUnit, MyReservations
@@ -113,6 +113,7 @@ Say this explicitly in the video.
         │   └── shared/        # Profile
         ├── hooks/             # useDebounce, etc.
         ├── utils/             # formatters (currency ₱, dates), status labels
+        ├── index.css          # Tailwind import + @theme brand tokens
         ├── routes.jsx
         └── main.jsx
 ```
@@ -243,7 +244,21 @@ Each row is done when it works end-to-end against the API, with loading, empty a
 
 **Role-based routing:** after login, redirect by `user.role` to that role's dashboard. `RoleRoute` blocks other roles client-side; the API is still the real guard. The sidebar menu is generated from the role.
 
-**Design system:** keep the legacy brand. Red `#c1121f`, blue `#1d4ed8`, ink `#111827`, Playfair Display for headings, Source Sans 3 for body text, and the house photos from the legacy repo's `assets/` folder (copy them into `frontend/src/assets/`). Use one `AppLayout` with a sidebar for every logged-in role (the legacy app had two inconsistent navbars).
+**Design system:** keep the legacy brand, defined once as Tailwind theme tokens in `frontend/src/index.css`:
+
+```css
+@import "tailwindcss";
+
+@theme {
+  --color-brand-red: #c1121f;
+  --color-brand-blue: #1d4ed8;
+  --color-ink: #111827;
+  --font-display: "Playfair Display", serif;
+  --font-sans: "Source Sans 3", sans-serif;
+}
+```
+
+This gives classes like `bg-brand-blue`, `text-ink` and `font-display`. Load both fonts from Google Fonts in `index.html`. Use Playfair Display for headings, Source Sans 3 for body text, and the house photos from the legacy repo's `assets/` folder (copy them into `frontend/src/assets/`). Use one `AppLayout` with a sidebar for every logged-in role (the legacy app had two inconsistent navbars).
 
 ---
 
@@ -253,7 +268,7 @@ Work top to bottom. Each phase ends with a PR, green tests and lint. **For Claud
 
 | Phase | Scope | Acceptance criteria |
 |---|---|---|
-| **0. Scaffold** | Laravel 12 is already installed at the root. Add Sanctum (`php artisan install:api`), CORS + `SANCTUM_STATEFUL_DOMAINS`, Pint, Pest; remove the default Tailwind/Blade front-end assets (`resources/js`, `resources/css`, root `package.json`/`vite.config.js`), since React has its own Vite setup. `frontend/`: Vite React, React Router, TanStack Query, axios (`withCredentials`, `withXSRFToken`), react-bootstrap, ESLint/Prettier. `.env.example` for both. README with setup commands. | `php artisan serve` + `npm run dev` both run. Frontend calls `GET /api/user` and gets 401. Lint passes. |
+| **0. Scaffold** | Laravel 12 is already installed at the root. Add Sanctum (`php artisan install:api`), CORS + `SANCTUM_STATEFUL_DOMAINS`, Pint, Pest; remove the default Tailwind/Blade front-end assets (`resources/js`, `resources/css`, root `package.json`/`vite.config.js`), since React has its own Vite setup (Tailwind moves into `frontend/`). `frontend/`: Vite React, Tailwind v4 (`@tailwindcss/vite`) with brand tokens in `src/index.css`, Headless UI, Heroicons, clsx, react-hot-toast, React Router, TanStack Query, axios (`withCredentials`, `withXSRFToken`), ESLint + Prettier with `prettier-plugin-tailwindcss`. `.env.example` for both. README with setup commands. | `php artisan serve` + `npm run dev` both run. Frontend calls `GET /api/user` and gets 401. Lint passes. |
 | **1. Database** | Enums, migrations, models + relationships + casts + scopes, factories, all seeders | `migrate:fresh --seed` succeeds. 870 houses. One user per role. Tinker relationships work. |
 | **2. Auth & shell** | Register/login/logout/user/profile/password endpoints + tests. `role` middleware. React AuthProvider, Login, Register, Profile, AppLayout with role sidebar, ProtectedRoute/RoleRoute, role redirect, 404 page. | Each seeded user logs in and lands on their dashboard. A wrong role gets 403 (API) or a redirect (UI). Inactive users cannot log in. |
 | **3. Catalog & reservations** | House-type endpoints, ReservationService (reserve/cancel/accept/reject/pay) + Policy + tests. Landing, house detail, reserve flow, my reservations, PM reservations page. | Full §4.2 flow works in the UI. Tests cover double booking, reject releasing the unit, pay promoting to tenant and creating a Payment. |
@@ -281,7 +296,9 @@ Work top to bottom. Each phase ends with a PR, green tests and lint. **For Claud
 - Components `PascalCase.jsx`, hooks `useThing.js`, one component per file.
 - All HTTP goes through `src/api/*`. Pages never call axios directly.
 - Server data is fetched with TanStack Query (`useQuery`/`useMutation`); invalidate queries after a mutation. No duplicated fetch logic.
-- Status → label/colour mapping lives in one place (`utils/status.js`, see SYSTEM_DOCUMENTATION §6.4).
+- Status → label/colour mapping lives in one place (`utils/status.js`). SYSTEM_DOCUMENTATION §6.4 uses Bootstrap colour names; treat them as meanings and map them to Tailwind: success → `green`, primary → `brand-blue`, info → `sky`, warning → `amber`, danger → `red`, secondary → `gray`.
+- Tailwind: use the theme tokens, never raw hex values in class names. When the same class list repeats, extract a component (`Button`, `Card`, `Badge`, `Input`) instead of using `@apply`. Use `clsx` for conditional classes. Let `prettier-plugin-tailwindcss` sort class names.
+- Interactive widgets (modal, dropdown, menu, tabs) use Headless UI, not hand-rolled show/hide logic.
 - `npm run lint` clean, Prettier formatted.
 
 **Git**

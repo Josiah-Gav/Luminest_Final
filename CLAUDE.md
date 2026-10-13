@@ -11,7 +11,7 @@ Real-estate management system for one subdivision: house reservations and purcha
 
 ## Ground rules
 
-- Stack is fixed: Laravel 12 (API only, Sanctum SPA cookie auth) at the repo root, React (Vite, JavaScript) in `frontend/`, MySQL. No Blade UI, no Inertia, no Livewire.
+- Stack is fixed: Laravel 12 (API only, Sanctum SPA cookie auth) at the repo root, React (Vite, JavaScript, **Tailwind CSS v4** + Headless UI) in `frontend/`, MySQL. No Bootstrap. No Blade UI, no Inertia, no Livewire.
 - Work one build phase (plan §7) at a time. Meet its acceptance criteria and stop. Do not jump ahead.
 - MVC is graded:
   - controllers stay thin (FormRequest → Policy → Service → API Resource);

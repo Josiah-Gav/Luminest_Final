@@ -19,10 +19,31 @@
 
 | Category | Points | What graders will look for → what we do |
 |---|---|---|
-| Functionality | 35 | Every module works, no errors, **MVC pattern** → full feature parity (§6), feature tests, thin controllers + models + API Resources |
+| Functionality | 35 | Every module (§1.1) works, no errors, **MVC pattern** → full feature parity (§6), feature tests, thin controllers + models + API Resources |
 | Design | 15 | Looks good, user-friendly → consistent layout, loading/empty/error states, toasts, confirm dialogs, responsive |
 | Coding standard | 25 | Indentation, naming, easy to follow → Laravel Pint + ESLint/Prettier enforced, conventions in §8 |
-| Presentation | 25 | Explain code confidently, everyone has a part → module ownership in §11 |
+| Presentation | 25 | Explain code confidently, everyone has a part → module owners in §1.1, script in §11 |
+
+### 1.1 Modules
+
+The system is split into six modules. Use these IDs and names in phases, PR titles, commit scopes (`feat(M3): ...`), test folders (`tests/Feature/M3_Reservation/`) and the presentation. Code folders stay grouped by role as in §3 (one module can span several roles), and services and models are named after the module's domain (`ReservationService`, `MaintenanceService`). "Each individual module working" in the rubric means each row below works end-to-end.
+
+| ID | Module | Features | Roles | API (§5) | Pages (§6) | Built in (§7) | Owner |
+|---|---|---|---|---|---|---|---|
+| **M1** | **Authentication & Profile** | Register, login, logout, role-based redirect, edit profile, change password, block inactive accounts, Google login (bonus) | All | §5.1 | Login, Register, Profile, OAuthCallback | Phases 2, 7 | _TBD_ |
+| **M2** | **House Catalog** | Public landing page, house model details, available block/lot lookup | Public, Prospect | §5.2 | Landing, HouseTypeDetail | Phase 3 | _TBD_ |
+| **M3** | **Reservation & Purchase** | Reserve a unit, cancel, PM accept/reject (reject frees the unit), pay with payment record (prospect becomes tenant), reservation history | Prospect, Property Manager | §5.3, §5.6 (reservations) | prospect/*, manager/Reservations | Phase 3 | _TBD_ |
+| **M4** | **Maintenance Requests** | Tenant submits and confirms resolved; PM assigns staff by expertise; staff updates progress and notes; open queue and history | Tenant, Property Manager, Maintenance Staff | §5.4, §5.5, §5.6 (maintenance) | tenant/*, staff/*, manager/Maintenance, manager/MaintenanceHistory | Phase 4 | _TBD_ |
+| **M5** | **Property Management** | PM dashboard stats, house listings and status, tenant list, staff list and demote | Property Manager | §5.6 (dashboard, houses, tenants, staff) | manager/Dashboard, Houses, Tenants, Staff | Phase 5 | _TBD_ |
+| **M6** | **User Administration** | Admin dashboard, create/edit/view/delete users, activate/deactivate, staff expertise, no self-delete | Admin | §5.7 | admin/* | Phase 5 | _TBD_ |
+
+**Shared foundations (not modules, used by all of them):**
+- Database schema and seeders (Phase 1).
+- Roles and authorization: `role` middleware, policies, React `ProtectedRoute`/`RoleRoute`.
+- Shared UI: `AppLayout`, sidebar, `components/ui/*`, toasts.
+- Optional enhancements from §9c. Each one you build counts as a small extra module (M7, M8, …) with its own owner.
+
+With fewer than six members, pair modules: M1 alone; M2 + M3; M4 alone; M5 + M6.
 
 ---
 
@@ -143,6 +164,8 @@ Legacy data import is **not** required for the course. Skip SYSTEM_DOCUMENTATION
 
 ## 5. API contract
 
+Subsections map to modules: §5.1 = M1, §5.2 = M2, §5.3 = M3, §5.4–5.5 = M4, §5.6 = M3/M4/M5 (manager side), §5.7 = M6.
+
 Base URL `/api`. JSON only. All routes except "public" require `auth:sanctum`. Errors use Laravel defaults: `401` unauthenticated, `403` forbidden (policy/role), `404`, `422` `{message, errors: {field: [..]}}`. Lists are paginated (`?page=`, Laravel `meta`/`links`).
 
 ### 5.1 Auth & profile
@@ -219,7 +242,7 @@ Base URL `/api`. JSON only. All routes except "public" require `auth:sanctum`. E
 
 ## 6. Frontend page map (feature parity checklist)
 
-Each row is done when it works end-to-end against the API, with loading, empty and error states.
+Each row is done when it works end-to-end against the API, with loading, empty and error states. See §1.1 for which module each page belongs to.
 
 | Role | Page (route) | Legacy equivalent | API used |
 |---|---|---|---|
@@ -265,6 +288,8 @@ This gives classes like `bg-brand-blue`, `text-ink` and `font-display`. Load bot
 ## 7. Build phases
 
 Work top to bottom. Each phase ends with a PR, green tests and lint. **For Claude Code:** do one phase (or one sub-bullet) per session. Read the acceptance criteria before starting, and do not start the next phase uninstructed.
+
+Phases build modules in dependency order: Phases 0–1 are shared foundations, Phase 2 = M1, Phase 3 = M2 + M3, Phase 4 = M4, Phase 5 = M5 + M6, Phase 6 = optional extras, Phase 7 = M1 (Google login).
 
 | Phase | Scope | Acceptance criteria |
 |---|---|---|
@@ -372,15 +397,15 @@ Use `localhost` for both apps, not `127.0.0.1` for one and `localhost` for the o
 
 ## 11. Presentation plan (15–20 min, every member speaks)
 
-Assign one module per member. Each member explains **their module end-to-end**: React page → API route → controller → service/policy → model → resource. That covers backend, frontend and code structure, as the brief asks.
+Each member presents the module(s) they own (§1.1) and explains **their module end-to-end**: React page → API route → controller → service/policy → model → resource. That covers backend, frontend and code structure, as the brief asks.
 
 | Segment | Minutes | Content |
 |---|---|---|
 | Intro & architecture | 2–3 | Problem, roles, stack, request-flow diagram (§2), folder structure |
-| Auth & roles (+ Google login) | 3 | Sanctum flow, role middleware, policies |
-| Reservations | 3–4 | Live demo: reserve → PM accept → pay → user becomes tenant. Show ReservationService transaction. |
-| Maintenance | 3–4 | Live demo: submit → assign (expertise rule) → progress → resolve. Show policy limiting staff to their own requests. |
-| Manager & admin dashboards | 2–3 | Search/filter, user CRUD |
+| M1 Authentication & Profile (+ Google login) | 3 | Sanctum flow, role middleware, policies |
+| M2–M3 Catalog, Reservation & Purchase | 3–4 | Live demo: reserve → PM accept → pay → user becomes tenant. Show ReservationService transaction. |
+| M4 Maintenance Requests | 3–4 | Live demo: submit → assign (expertise rule) → progress → resolve. Show policy limiting staff to their own requests. |
+| M5–M6 Property Management & User Administration | 2–3 | Dashboards, search/filter, user CRUD |
 | Quality & enhancements | 2 | Tests running, lint, instructor comments addressed (§9a), legacy defects fixed (§9b) |
 
 Record against a fresh `migrate:fresh --seed` database so the demo is predictable.
@@ -389,7 +414,7 @@ Record against a fresh `migrate:fresh --seed` database so the demo is predictabl
 
 ## 12. Open decisions (team must answer; Claude Code should ask if still blank)
 
-1. Team size and module owners? (§11)
+1. Team size and module owners? (fill in the Owner column in §1.1)
 2. Instructor comments from the previous project? (§9a)
 3. Which optional enhancements? (§9c)
 4. JavaScript or TypeScript for the frontend? Default: JavaScript.

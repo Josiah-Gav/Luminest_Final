@@ -6,7 +6,7 @@ Real-estate management system for one subdivision: house reservations and purcha
 
 ## Read before working
 
-1. `docs/LARAVEL_REACT_PLAN.md` covers architecture, folder structure, the API contract, the page map, build phases, conventions and open decisions. **It is authoritative for how to build.**
+1. `docs/LARAVEL_REACT_PLAN.md` covers the six modules (§1.1, M1–M6; use these IDs in tests, commits and PRs), architecture, folder structure, the API contract, the page map, build phases, conventions and open decisions. **It is authoritative for how to build.**
 2. `docs/SYSTEM_DOCUMENTATION.md` covers the legacy app's workflows, status rules, DB schema and known defects (§7). **It is authoritative for business rules.** Do not reproduce the defects listed in §7.
 
 ## Ground rules

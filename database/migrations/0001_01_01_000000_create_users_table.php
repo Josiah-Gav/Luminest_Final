@@ -13,10 +13,15 @@ return new class extends Migration
     {
         Schema::create('users', function (Blueprint $table) {
             $table->id();
-            $table->string('name');
-            $table->string('email')->unique();
-            $table->timestamp('email_verified_at')->nullable();
-            $table->string('password');
+            $table->string('name', 100);
+            $table->string('email', 150)->unique();
+            $table->string('phone_number', 20)->nullable()->unique(); // normalized 09XXXXXXXXX
+            $table->string('password')->nullable();                   // null for Google-only accounts
+            $table->string('role', 30)->default('prospect')->index(); // App\Enums\Role
+            $table->string('expertise', 20)->nullable();              // App\Enums\MaintenanceCategory, staff only
+            $table->boolean('is_active')->default(true);
+            $table->string('google_id')->nullable()->unique();
+            $table->string('avatar_url')->nullable();
             $table->rememberToken();
             $table->timestamps();
         });

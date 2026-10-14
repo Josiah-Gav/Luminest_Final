@@ -21,7 +21,7 @@
 
 ## 1. System overview
 
-Luminest is a real-estate management system for a single subdivision (15 blocks, 870 house units, 4 house models). It covers three business processes:
+Luminest is a real-estate management system for a single subdivision (15 blocks, 850 house units, 4 house models). It covers three business processes:
 
 | Process | Actors | Summary |
 |---|---|---|
@@ -288,7 +288,7 @@ erDiagram
 ### 5.3 Seed data
 
 - **UserSeeder** — truncates `users`, creates one account per role, password `password123`: `prospect@`, `tenant@`, `staff@`, `manager@`, `admin@luminest.com`.
-- **HouseSeeder** — truncates `house`, generates 870 `available` units:
+- **HouseSeeder** — truncates `house`, generates 850 `available` units:
 
 | Blocks | Lots per block | Model |
 |---|---|---|

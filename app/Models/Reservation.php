@@ -47,10 +47,14 @@ class Reservation extends Model
         return $this->belongsTo(House::class);
     }
 
-    /** @return HasMany<Payment, $this> */
+    /**
+     * Oldest first, so the payment list reads like a statement.
+     *
+     * @return HasMany<Payment, $this>
+     */
     public function payments(): HasMany
     {
-        return $this->hasMany(Payment::class);
+        return $this->hasMany(Payment::class)->orderBy('id');
     }
 
     /**

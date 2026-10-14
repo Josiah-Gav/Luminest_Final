@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\EnsureUserHasRole;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -18,6 +19,9 @@ return Application::configure(basePath: dirname(__DIR__))
 
         // The login page lives in the SPA, so the API never redirects guests (no "login" route exists here).
         $middleware->redirectGuestsTo(fn () => null);
+
+        // ->middleware('role:admin,property_manager') on a route or group.
+        $middleware->alias(['role' => EnsureUserHasRole::class]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         // API errors are always JSON (e.g. 401 instead of a redirect to a "login" route that doesn't exist).

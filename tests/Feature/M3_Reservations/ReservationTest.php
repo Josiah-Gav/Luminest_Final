@@ -46,6 +46,20 @@ it('blocks double booking of the same unit (R1)', function () {
     expect(Reservation::count())->toBe(1);
 });
 
+it('does not let a prospect with an active reservation reserve a second unit (R2)', function () {
+    $prospect = userWithRole(Role::Prospect);
+    reserveVia($prospect, unitPriced(1_500_000));
+    $second = unitPriced(1_500_000);
+
+    $this->actingAs($prospect)
+        ->postJson('/api/reservations', ['house_id' => $second->id, 'fee' => 5_000])
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors('house_id');
+
+    expect($second->fresh()->status)->toBe(HouseStatus::Available)
+        ->and(Reservation::count())->toBe(1);
+});
+
 it('rejects a reservation fee under ₱5,000', function () {
     $house = unitPriced(1_500_000);
 

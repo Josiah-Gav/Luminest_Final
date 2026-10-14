@@ -3,6 +3,8 @@ import GuestRoute from "./auth/GuestRoute";
 import ProtectedRoute from "./auth/ProtectedRoute";
 import RoleRoute from "./auth/RoleRoute";
 import AppLayout from "./components/layout/AppLayout";
+import ManagerMaintenance from "./pages/manager/Maintenance";
+import ManagerMaintenanceHistory from "./pages/manager/MaintenanceHistory";
 import ManagerReservations from "./pages/manager/Reservations";
 import MyReservations from "./pages/prospect/MyReservations";
 import Home from "./pages/public/Home";
@@ -12,6 +14,8 @@ import NotFound from "./pages/public/NotFound";
 import Register from "./pages/public/Register";
 import DashboardPlaceholder from "./pages/shared/DashboardPlaceholder";
 import Profile from "./pages/shared/Profile";
+import StaffAssignments from "./pages/staff/Assignments";
+import TenantMaintenance from "./pages/tenant/Maintenance";
 
 // The page map (plan §6). Later phases add their pages inside the matching RoleRoute.
 export default function AppRoutes() {
@@ -44,6 +48,14 @@ export default function AppRoutes() {
                             path="/manager/reservations"
                             element={<ManagerReservations />}
                         />
+                        <Route
+                            path="/manager/maintenance"
+                            element={<ManagerMaintenance />}
+                        />
+                        <Route
+                            path="/manager/maintenance/history"
+                            element={<ManagerMaintenanceHistory />}
+                        />
                     </Route>
                     <Route
                         element={<RoleRoute roles={["maintenance_staff"]} />}
@@ -52,11 +64,19 @@ export default function AppRoutes() {
                             path="/staff"
                             element={<DashboardPlaceholder />}
                         />
+                        <Route
+                            path="/staff/requests"
+                            element={<StaffAssignments />}
+                        />
                     </Route>
                     <Route element={<RoleRoute roles={["tenant"]} />}>
                         <Route
                             path="/tenant"
                             element={<DashboardPlaceholder />}
+                        />
+                        <Route
+                            path="/tenant/maintenance"
+                            element={<TenantMaintenance />}
                         />
                     </Route>
                     <Route element={<RoleRoute roles={["prospect"]} />}>

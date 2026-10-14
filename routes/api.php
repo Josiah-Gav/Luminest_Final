@@ -1,11 +1,16 @@
 <?php
 
+use App\Http\Controllers\Api\Admin\DashboardController as AdminDashboardController;
+use App\Http\Controllers\Api\Admin\UserController as AdminUserController;
 use App\Http\Controllers\Api\Auth\AuthController;
 use App\Http\Controllers\Api\Auth\ProfileController;
 use App\Http\Controllers\Api\HouseTypeController;
+use App\Http\Controllers\Api\PropertyManager\DashboardController as ManagerDashboardController;
+use App\Http\Controllers\Api\PropertyManager\HouseController as ManagerHouseController;
 use App\Http\Controllers\Api\PropertyManager\MaintenanceRequestController as ManagerMaintenanceController;
 use App\Http\Controllers\Api\PropertyManager\ReservationController as ManagerReservationController;
 use App\Http\Controllers\Api\PropertyManager\StaffController as ManagerStaffController;
+use App\Http\Controllers\Api\PropertyManager\TenantController as ManagerTenantController;
 use App\Http\Controllers\Api\ReceiptController;
 use App\Http\Controllers\Api\ReservationController;
 use App\Http\Controllers\Api\Staff\MaintenanceRequestController as StaffMaintenanceController;
@@ -51,11 +56,23 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::patch('/maintenance-requests/{id}', [StaffMaintenanceController::class, 'update']);
     });
 
+    // M6 User Administration (plan §5.7).
+    Route::middleware('role:admin')->prefix('admin')->group(function () {
+        Route::get('/dashboard', AdminDashboardController::class);
+        Route::apiResource('users', AdminUserController::class);
+    });
+
     Route::middleware('role:property_manager')->prefix('manager')->group(function () {
         // Reservations are read-only for the PM (R7).
         Route::get('/reservations', [ManagerReservationController::class, 'index']);
         Route::get('/maintenance-requests', [ManagerMaintenanceController::class, 'index']);
         Route::patch('/maintenance-requests/{maintenanceRequest}/assignment', [ManagerMaintenanceController::class, 'assign']);
         Route::get('/staff', [ManagerStaffController::class, 'index']);
+        Route::delete('/staff/{user}', [ManagerStaffController::class, 'destroy']);
+
+        // M5 Property Management (plan §5.6). Houses are read-only: status follows reservations (R7).
+        Route::get('/dashboard', ManagerDashboardController::class);
+        Route::get('/houses', [ManagerHouseController::class, 'index']);
+        Route::get('/tenants', [ManagerTenantController::class, 'index']);
     });
 });

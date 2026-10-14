@@ -1,5 +1,7 @@
 <?php
 
+use App\Enums\Role;
+use App\Models\User;
 use Tests\TestCase;
 
 /*
@@ -30,7 +32,16 @@ function freshRequest(array $cookies = []): TestCase
     app('auth')->forgetGuards();
     app()->forgetInstance('auth.driver'); // the Guard singleton the session handler asks for user_id
     app('session')->forgetDrivers();
+    app()->forgetInstance('session.store'); // the session the auth guard reads; it would keep the previous request's login
 
     // JSON test requests only send cookies with withCredentials().
     return spa()->withCredentials()->withCookies($cookies);
+}
+
+/**
+ * A user with the given role (plus attribute overrides), for tests of who may do what.
+ */
+function userAs(Role $role, array $attributes = []): User
+{
+    return User::factory()->create(['role' => $role, ...$attributes]);
 }

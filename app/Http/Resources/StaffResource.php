@@ -7,7 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 /**
- * Just enough of a staff member for the assign dropdown. Phase 5 extends it.
+ * A staff member for the assign dropdown, with request counts on the Staff page.
  *
  * @mixin User
  */
@@ -22,6 +22,8 @@ class StaffResource extends JsonResource
             'id' => $this->id,
             'name' => $this->name,
             'expertise' => $this->expertise,
+            'active_requests_count' => $this->whenCounted('active_requests_count'),
+            'completed_requests_count' => $this->whenCounted('completed_requests_count'),
         ];
     }
 }

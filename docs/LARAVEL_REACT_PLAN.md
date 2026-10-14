@@ -32,9 +32,9 @@ The system is split into six modules. Use these IDs and names in phases, PR titl
 |---|---|---|---|---|---|---|---|
 | **M1** | **Authentication & Profile** | Register, login, logout, role-based redirect, edit profile, change password, block inactive accounts, Google login (bonus) | All | §5.1 | Login, Register, Profile, OAuthCallback | Phases 2, 7 | _TBD_ |
 | **M2** | **House Catalog** | Public landing page, house model details, available block/lot lookup | Public, Prospect | §5.2 | Landing, HouseTypeDetail | Phase 3 | _TBD_ |
-| **M3** | **Reservation & Purchase** | Reserve a unit, cancel, PM accept/reject (reject frees the unit), pay with payment record (prospect becomes tenant), reservation history | Prospect, Property Manager | §5.3, §5.6 (reservations) | prospect/*, manager/Reservations | Phase 3 | _TBD_ |
+| **M3** | **Reservation & Purchase** Reserve a unit by paying a ≥ ₱5,000 reservation fee, pay the balance in instalments, automatic completion at ₱0 (prospect becomes tenant), cancel (fee non-refundable), PDF receipt per payment, reservation history; PM view-only (§1.2) | Prospect, Property Manager | §5.3, §5.6 (reservations) | prospect/*, manager/Reservations | Phase 3 | _TBD_ |
 | **M4** | **Maintenance Requests** | Tenant submits and confirms resolved; PM assigns staff by expertise; staff updates progress and notes; open queue and history | Tenant, Property Manager, Maintenance Staff | §5.4, §5.5, §5.6 (maintenance) | tenant/*, staff/*, manager/Maintenance, manager/MaintenanceHistory | Phase 4 | _TBD_ |
-| **M5** | **Property Management** | PM dashboard stats, house listings and status, tenant list, staff list and demote | Property Manager | §5.6 (dashboard, houses, tenants, staff) | manager/Dashboard, Houses, Tenants, Staff | Phase 5 | _TBD_ |
+| **M5** | **Property Management** | PM dashboard stats, house listings (read-only status, see §1.2 R7), tenant list, staff list and demote | Property Manager | §5.6 (dashboard, houses, tenants, staff) | manager/Dashboard, Houses, Tenants, Staff | Phase 5 | _TBD_ |
 | **M6** | **User Administration** | Admin dashboard, create/edit/view/delete users, activate/deactivate, staff expertise, no self-delete | Admin | §5.7 | admin/* | Phase 5 | _TBD_ |
 
 **Shared foundations (not modules, used by all of them):**
@@ -44,6 +44,47 @@ The system is split into six modules. Use these IDs and names in phases, PR titl
 - Optional enhancements from §9c. Each one you build counts as a small extra module (M7, M8, …) with its own owner.
 
 With fewer than six members, pair modules: M1 alone; M2 + M3; M4 alone; M5 + M6.
+
+### 1.2 Changed business rules: reservation & payment (M3)
+
+The rebuild **replaces** the legacy reservation flow (SYSTEM_DOCUMENTATION §4.2: pending → PM accept/reject → pay). Where SYSTEM_DOCUMENTATION disagrees with this section, **this section wins**.
+
+**Summary:** the prospect reserves a unit by paying a reservation fee, pays the rest in instalments, and the purchase completes automatically when the balance reaches ₱0. The Property Manager no longer approves or rejects anything. All payments are **simulated** (no gateway), and every payment produces a **PDF receipt**.
+
+**Reservation statuses** (`ReservationStatus` enum): `reserved`, `cancelled`, `paid`. There is no `pending`, `accepted` or `rejected`.
+
+```
+                 reserve + fee ≥ ₱5,000
+  (house available) ──────────────────────▶ reserved ──── balance reaches ₱0 ───▶ paid
+                                               │          (automatic)
+                                               └── prospect cancels ──▶ cancelled
+```
+
+**Rules**
+
+| # | Rule |
+|---|---|
+| R1 | **Reserve:** the prospect picks an available unit and pays a **reservation fee of at least ₱5,000** in the same action. Reservation, first payment and house status `available → reserved` happen in **one DB transaction**, with the house row locked so two people can't reserve the same unit. |
+| R2 | **One active reservation per user:** a user can't start a new reservation while they have one in `reserved` status. (They can buy another house after the first is `paid`.) |
+| R3 | **Price snapshot:** the reservation stores `total_price` copied from the house type at reservation time, so later price changes don't affect existing buyers. **Balance = total_price − sum of payments.** |
+| R4 | **Instalments:** while `reserved`, the owner can pay any number of times. Each payment must be **at least ₱5,000**, except when the remaining balance is below ₱5,000, in which case the payment must be **exactly** the balance. A payment can **never exceed** the balance (no overpayment). |
+| R5 | **Automatic completion:** the payment that brings the balance to ₱0 sets, in the same transaction: reservation → `paid` (+ `paid_at`), house → `sold` with `owner_id` and `purchased_at`, and the user's role `prospect → tenant`. **No Property Manager input.** If the reservation fee already equals the full price, R1 and R5 happen together. |
+| R6 | **Cancel:** only the owner, only while `reserved`. Reservation → `cancelled` (+ `cancelled_at`), house → `available`. Payments made so far are **non-refundable**: they stay on record and their receipts remain downloadable. |
+| R7 | **Property Manager is view-only** for reservations: list, filter, see payments/balances and download receipts. No accept, reject, cancel or edit. House status is driven only by reservations (R1, R5, R6), so the PM can't change it by hand either. |
+| R8 | **Money is whole pesos:** prices and payment amounts are stored as unsigned integers (no centavos, no floats). Display them as `₱2,495,000`. |
+| R9 | **Receipt for every payment:** a PDF generated server-side (see below), downloadable by the payer, the Property Manager and the Admin. |
+
+**PDF receipt contents** (one receipt per payment; generated on demand from the `payments` row, so it can be re-downloaded any time):
+- Receipt number (e.g. `LUM-2026-000123`) and payment date/time.
+- Buyer name and email.
+- What was paid for: house model, block and lot (e.g. *Angelique Duplex, Block 1 Lot 5*).
+- Payment type: reservation fee, instalment or final payment.
+- **Amount paid now**, total price, total paid to date, **remaining balance**.
+- A note: *"Simulated payment. No real transaction took place."*
+
+The one-line summary from the brief must be readable at a glance, for example: **Angelique Duplex — Paid ₱5,000 | Balance ₱2,495,000 | 2026-10-14**.
+
+Implementation: `barryvdh/laravel-dompdf` rendering a Blade template at `resources/views/pdf/receipt.blade.php`. This is the **only** Blade view in the project: it's a PDF layout, not a web page, so it doesn't conflict with "no Blade UI".
 
 ---
 
@@ -61,6 +102,7 @@ With fewer than six members, pair modules: M1 alone; M2 + M3; M4 alone; M5 + M6.
 | Forms (FE) | react-hook-form | Less boilerplate. Laravel 422 errors map onto fields. |
 | Styling / UI | **Tailwind CSS v4** (`@tailwindcss/vite`) + **Headless UI** (modals, dropdowns, menus, transitions) + **Heroicons** + `clsx` | The team already knows Tailwind. Full design control for the Design score. Headless UI supplies accessible interactive pieces without imposing a look. |
 | Notifications (FE) | react-hot-toast | Feedback on every action, styled with Tailwind classes |
+| PDF receipts | `barryvdh/laravel-dompdf` (Blade template rendered to PDF) | Simple, well known, no external service. See §1.2. |
 | DB | XAMPP's MySQL (MariaDB 10.4, port 3309), database `luminest_v2` (do not reuse the legacy DB) | Clean schema, seeded from scratch |
 | Tests | Pest 3 (backend feature tests; Pest 4 needs PHP 8.3) | Protects the business rules during refactors |
 | Lint/format | Laravel Pint (PSR-12) · ESLint + Prettier | Rubric: coding standard |
@@ -147,6 +189,11 @@ Use the schema in **SYSTEM_DOCUMENTATION.md §8.2** as-is: `users`, `house_types
 
 - Status/category/priority columns are `string` + **PHP backed enums** with Eloquent casts. Do not use MySQL `ENUM`.
 - `houses` has `unique(block, lot)`. `reservations.house_id` is a real FK.
+- **Reservations and payments follow §1.2**, which overrides SYSTEM_DOCUMENTATION §8.2 for these tables:
+  - `house_types.price`: unsigned integer (whole pesos).
+  - `reservations`: `user_id`, `house_id`, `status` (`reserved`/`cancelled`/`paid`), `total_price` (unsigned integer snapshot), `cancelled_at`, `paid_at`, timestamps. No `decided_at`/`decided_by`.
+  - `payments`: `reservation_id`, `receipt_number` (unique), `type` (`reservation_fee`/`instalment`/`final`), `amount`, `balance_after` (snapshot for the receipt), `method` (default `simulated`), `paid_at`, timestamps.
+  - Balance is calculated (`total_price − sum(payments.amount)`), never stored on the reservation, so it can't drift. `balance_after` on each payment is only a historical snapshot for its receipt.
 - No `users.owned_house`. Ownership = `houses.owner_id`.
 - Add `users.google_id` (nullable, unique) and `users.avatar_url` (nullable) for Phase 7. Make `users.password` nullable for Google-only accounts.
 - Store everything raw. **Never** `htmlspecialchars` before saving; React escapes output.
@@ -156,7 +203,7 @@ Use the schema in **SYSTEM_DOCUMENTATION.md §8.2** as-is: `users`, `house_types
 - `HouseTypeSeeder`: the 4 models from SYSTEM_DOCUMENTATION §5.4 (with prices).
 - `HouseSeeder`: the 870 units, using the block layout in §5.3.
 - `UserSeeder`: one account per role, password `password`: `admin@`, `manager@`, `staff.plumbing@`, `staff.electrical@`, `tenant@`, `prospect@luminest.test`.
-- `DemoSeeder`: reservations and maintenance requests in every status, so every screen has data during the video.
+- `DemoSeeder`: reservations in every status (`reserved` with a few instalments, `cancelled` with a forfeited fee, `paid`), with consistent payments, and maintenance requests in every status, so every screen has data during the video.
 
 Legacy data import is **not** required for the course. Skip SYSTEM_DOCUMENTATION §9 unless real data must be kept.
 
@@ -192,12 +239,14 @@ Base URL `/api`. JSON only. All routes except "public" require `auth:sanctum`. E
 
 ### 5.3 Prospect / Tenant: reservations (role: prospect, tenant)
 
-| Method | Path | Rule (see SYSTEM_DOCUMENTATION §4.2) |
+| Method | Path | Rule (see §1.2) |
 |---|---|---|
-| GET | `/api/reservations` | Own reservations |
-| POST | `/api/reservations` | `{house_id}`. Unit available. No other pending reservation. Row lock. |
-| POST | `/api/reservations/{id}/cancel` | Owner. Pending only. Releases the unit. |
-| POST | `/api/reservations/{id}/pay` | Owner. Accepted only. Creates a Payment (amount from house_type.price, method `simulated`). House becomes sold with owner. Prospect becomes tenant. |
+| GET | `/api/reservations` | Own reservations, with total price, total paid and balance |
+| GET | `/api/reservations/{id}` | Owner. Includes the payment list. |
+| POST | `/api/reservations` | `{house_id, amount}`. R1–R3: unit available (row lock), no other `reserved` reservation, `amount` ≥ 5,000 and ≤ price. Creates reservation + first payment. Returns the payment, so the UI can offer its receipt. |
+| POST | `/api/reservations/{id}/payments` | `{amount}`. Owner, `reserved` only. R4 amount rules; R5 automatic completion when the balance reaches 0. |
+| POST | `/api/reservations/{id}/cancel` | Owner, `reserved` only. R6: unit becomes available; payments stay (non-refundable). |
+| GET | `/api/payments/{id}/receipt` | PDF download (`application/pdf`). The payer, Property Manager or Admin only (policy). |
 
 ### 5.4 Tenant: maintenance (role: tenant)
 
@@ -220,11 +269,10 @@ Base URL `/api`. JSON only. All routes except "public" require `auth:sanctum`. E
 
 | Method | Path | Notes |
 |---|---|---|
-| GET | `/api/manager/dashboard` | House counts by status, maintenance counts by status, recent requests, pending reservations count |
+| GET | `/api/manager/dashboard` | House counts by status, maintenance counts by status, recent requests, active reservations count, total collected and total outstanding balance |
 | GET | `/api/manager/houses?search=&status=&house_type=` | Paginated |
-| PATCH | `/api/manager/houses/{id}` | `{status}`. Restrict per SYSTEM_DOCUMENTATION §8.9 (no free "sold") |
-| GET | `/api/manager/reservations?status=&search=` | |
-| PATCH | `/api/manager/reservations/{id}` | `{status: accepted\|rejected}`. **Reject releases the unit.** |
+| GET | `/api/manager/reservations?status=&search=` | Read-only (R7): buyer, unit, status, total, paid, balance |
+| GET | `/api/manager/reservations/{id}` | Read-only, with the payment list. Receipts via `GET /api/payments/{id}/receipt`. |
 | GET | `/api/manager/tenants?search=` | Tenants with their houses |
 | GET | `/api/manager/maintenance-requests?scope=open\|closed&search=&status=&priority=` | |
 | PATCH | `/api/manager/maintenance-requests/{id}/assignment` | `{staff_id\|null}`. Expertise must match category or be `general`. |
@@ -251,14 +299,14 @@ Each row is done when it works end-to-end against the API, with loading, empty a
 | Public | Login `/login`, Register `/register` | `view/auth/*` | auth |
 | All | Profile `/profile` | `*/profile.php` | profile |
 | Prospect | Dashboard `/prospect` | `Prospect/dashboard.php` | house-types, reservations |
-| Prospect | Reserve `/prospect/reserve/:slug` (block → lot pickers) | `Prospect/reservation.php` | available-units, POST reservations |
-| Prospect | My reservations `/prospect/reservations` (cancel, pay modal with ₱ price) | `Prospect/history.php` | reservations |
+| Prospect | Reserve `/prospect/reserve/:slug` (block → lot pickers, reservation fee input with ₱5,000 minimum, confirm dialog, receipt download after success) | `Prospect/reservation.php` | available-units, POST reservations |
+| Prospect | My reservations `/prospect/reservations` (per reservation: total / paid / balance with a progress bar, "Pay" modal enforcing R4, payment history with a receipt download per payment, cancel with a non-refundable warning) | `Prospect/history.php` | reservations, payments, receipt |
 | Tenant | Dashboard `/tenant` (my house, open requests) | `Tenant/dashboard.php` | user, maintenance |
 | Tenant | Requests list / new / detail (+ "Mark resolved") | `Tenant/maintenance_*` | tenant maintenance |
 | Staff | Dashboard, Assigned list, Detail (status + notes form), History | `Maintenance_Staff/*` | staff maintenance |
 | Manager | Dashboard (stat cards, recent, auto-refresh 30 s) | `Property_Manager/dashboard.php` | manager/dashboard |
 | Manager | Houses (search, filter, status change) | `listings.php` | manager/houses |
-| Manager | Reservations (accept/reject with confirm) | `reservation_list.php` | manager/reservations |
+| Manager | Reservations (read-only list + detail with payments and receipt downloads) | `reservation_list.php` | manager/reservations, receipt |
 | Manager | Tenants | `tenants.php` | manager/tenants |
 | Manager | Maintenance queue (assign staff dropdown filtered by expertise) | `maintenance.php` | manager/maintenance-requests, manager/staff |
 | Manager | Maintenance history | `maintenance_history.php` | `scope=closed` |
@@ -296,7 +344,7 @@ Phases build modules in dependency order: Phases 0–1 are shared foundations, P
 | **0. Scaffold** | Laravel 12 is already installed at the root. Add Sanctum (`php artisan install:api`), CORS + `SANCTUM_STATEFUL_DOMAINS`, Pint, Pest; remove the default Tailwind/Blade front-end assets (`resources/js`, `resources/css`, root `package.json`/`vite.config.js`), since React has its own Vite setup (Tailwind moves into `frontend/`). `frontend/`: Vite React, Tailwind v4 (`@tailwindcss/vite`) with brand tokens in `src/index.css`, Headless UI, Heroicons, clsx, react-hot-toast, React Router, TanStack Query, axios (`withCredentials`, `withXSRFToken`), ESLint + Prettier with `prettier-plugin-tailwindcss`. `.env.example` for both. README with setup commands. | `php artisan serve` + `npm run dev` both run. Frontend calls `GET /api/user` and gets 401. Lint passes. |
 | **1. Database** | Enums, migrations, models + relationships + casts + scopes, factories, all seeders. Keep Laravel's default `users`/`cache`/`jobs` migrations (they also create `sessions`, `cache` and `jobs`): `CACHE_STORE` and `QUEUE_CONNECTION` are still `database`, and Phase 2 login throttling uses the cache. | `migrate:fresh --seed` succeeds. 870 houses. One user per role. Tinker relationships work. |
 | **2. Auth & shell** | Register/login/logout/user/profile/password endpoints + tests. `role` middleware. React AuthProvider, Login, Register, Profile, AppLayout with role sidebar, ProtectedRoute/RoleRoute, role redirect, 404 page. | Each seeded user logs in and lands on their dashboard. A wrong role gets 403 (API) or a redirect (UI). Inactive users cannot log in. |
-| **3. Catalog & reservations** | House-type endpoints, ReservationService (reserve/cancel/accept/reject/pay) + Policy + tests. Landing, house detail, reserve flow, my reservations, PM reservations page. | Full §4.2 flow works in the UI. Tests cover double booking, reject releasing the unit, pay promoting to tenant and creating a Payment. |
+| **3. Catalog & reservations** | House-type endpoints, ReservationService (reserve/pay/cancel per §1.2) + Policy + tests, PDF receipt (dompdf). Landing, house detail, reserve flow, my reservations with pay modal and receipts, PM read-only reservations page. | Full §1.2 flow works in the UI. Tests cover: double booking blocked, fee < ₱5,000 rejected, instalment < ₱5,000 rejected unless it settles the balance, overpayment rejected, final payment sets `paid` + house `sold` + role `tenant`, cancel frees the unit and keeps payments, PM cannot modify reservations, receipt downloads as PDF only for allowed users. |
 | **4. Maintenance** | MaintenanceService (submit/assign/progress/resolve) + Policy + tests. Tenant pages, staff pages, PM queue + history. | Full §4.3 flow works. Staff cannot see or update unassigned requests (test). Expertise rule enforced (test). |
 | **5. Manager & admin** | PM dashboard, houses, tenants, staff pages. Admin dashboard + user CRUD. | Every legacy PM/Admin screen has a working equivalent. Self-delete is blocked. |
 | **6. Enhancements** | Items chosen from §9 | Each item has its own test or demo steps |
@@ -359,8 +407,8 @@ These all come from SYSTEM_DOCUMENTATION §7:
 - Proper role protection on every endpoint.
 - Staff limited to their own assignments.
 - CSRF protection.
-- Rejecting a reservation releases the unit.
-- One consistent payment path with a payment record.
+- Reservations can no longer lock a unit for free: a reservation fee is required, and every payment is recorded with a receipt.
+- One payment path with automatic completion; the PM can't push a sale through by hand.
 - Passwords are no longer altered before hashing.
 - Inactive accounts are blocked at login.
 - Validation on every input.
@@ -369,8 +417,7 @@ These all come from SYSTEM_DOCUMENTATION §7:
 
 | Feature | Value for demo | Effort |
 |---|---|---|
-| In-app notifications (Laravel database notifications + bell icon): reservation accepted/rejected, request assigned/completed | High | Medium |
-| Payment receipt page (from the `payments` table) | Medium | Low |
+| In-app notifications (Laravel database notifications + bell icon): payment received / reservation fully paid, request assigned/completed | High | Medium |
 | Photo upload on maintenance requests (`storage/` + validation) | Medium | Medium |
 | Dashboard charts (Chart.js / Recharts: houses by status, requests per month) | High (design score) | Low |
 | CSV export on manager tables | Low | Low |
@@ -403,7 +450,7 @@ Each member presents the module(s) they own (§1.1) and explains **their module 
 |---|---|---|
 | Intro & architecture | 2–3 | Problem, roles, stack, request-flow diagram (§2), folder structure |
 | M1 Authentication & Profile (+ Google login) | 3 | Sanctum flow, role middleware, policies |
-| M2–M3 Catalog, Reservation & Purchase | 3–4 | Live demo: reserve → PM accept → pay → user becomes tenant. Show ReservationService transaction. |
+| M2–M3 Catalog, Reservation & Purchase | 3–4 | Live demo: reserve with ₱5,000 fee → download receipt → pay an instalment → pay the exact balance → status becomes paid and the user becomes a tenant automatically. Show the ReservationService transaction and the R4 validation. |
 | M4 Maintenance Requests | 3–4 | Live demo: submit → assign (expertise rule) → progress → resolve. Show policy limiting staff to their own requests. |
 | M5–M6 Property Management & User Administration | 2–3 | Dashboards, search/filter, user CRUD |
 | Quality & enhancements | 2 | Tests running, lint, instructor comments addressed (§9a), legacy defects fixed (§9b) |
@@ -420,6 +467,5 @@ Record against a fresh `migrate:fresh --seed` database so the demo is predictabl
 4. JavaScript or TypeScript for the frontend? Default: JavaScript.
 5. Can one user own several houses? Default: yes (schema allows it). If a tenant owns more than one, they pick the house when filing a request.
 6. Product questions in SYSTEM_DOCUMENTATION §8.9. Defaults used in this plan:
-   - PM can only accept/reject; payment always goes through the prospect's pay action.
-   - PM house status edits are limited to `available ↔ reserved` holds.
+   - Reservation workflow: decided, see §1.2 (fee ≥ ₱5,000, instalments ≥ ₱5,000, automatic completion, non-refundable cancel, PM view-only).
    - Unused maintenance statuses (`cancelled`, `rejected`, `on_hold`) are dropped.

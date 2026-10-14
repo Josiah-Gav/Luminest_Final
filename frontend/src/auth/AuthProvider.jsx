@@ -42,6 +42,9 @@ export default function AuthProvider({ children }) {
             },
             updateProfile: async (details) =>
                 setUser(await api.updateProfile(details)),
+            // Reload GET /api/user, e.g. after the final payment turned a prospect into a tenant.
+            refreshUser: () =>
+                queryClient.refetchQueries({ queryKey: USER_QUERY_KEY }),
         };
     }, [query.data, query.isPending, queryClient]);
 

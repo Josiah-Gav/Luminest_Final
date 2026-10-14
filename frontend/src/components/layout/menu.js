@@ -33,7 +33,6 @@ export const MENU = {
             label: "Reservations",
             to: "/manager/reservations",
             icon: CreditCardIcon,
-            soon: true,
         },
         {
             label: "Tenants",
@@ -75,22 +74,13 @@ export const MENU = {
             icon: WrenchScrewdriverIcon,
             soon: true,
         },
+        { label: "My purchase", to: "/reservations", icon: CreditCardIcon },
         profile,
     ],
     prospect: [
         { label: "Dashboard", to: "/prospect", icon: HomeIcon },
-        {
-            label: "Reserve a unit",
-            to: "/prospect/reserve",
-            icon: HomeModernIcon,
-            soon: true,
-        },
-        {
-            label: "My reservations",
-            to: "/prospect/reservations",
-            icon: CreditCardIcon,
-            soon: true,
-        },
+        { label: "Browse houses", to: "/", icon: HomeModernIcon },
+        { label: "My reservations", to: "/reservations", icon: CreditCardIcon },
         profile,
     ],
 };

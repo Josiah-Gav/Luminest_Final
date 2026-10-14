@@ -9,3 +9,28 @@ use Tests\TestCase;
 
 pest()->extend(TestCase::class)
     ->in('Feature');
+
+/**
+ * A request as the React app sends it. Sanctum only starts a session (and so
+ * can log someone in) for requests whose Origin is a stateful domain.
+ */
+function spa(): TestCase
+{
+    return test()->withHeader('Origin', config('app.frontend_url'));
+}
+
+/**
+ * The next request as a new PHP process would see it: no user or session
+ * kept in memory from earlier requests, so only the cookies sent along carry
+ * the session. Sessions live in the database here, which survives the reset.
+ */
+function freshRequest(array $cookies = []): TestCase
+{
+    config(['session.driver' => 'database']);
+    app('auth')->forgetGuards();
+    app()->forgetInstance('auth.driver'); // the Guard singleton the session handler asks for user_id
+    app('session')->forgetDrivers();
+
+    // JSON test requests only send cookies with withCredentials().
+    return spa()->withCredentials()->withCookies($cookies);
+}

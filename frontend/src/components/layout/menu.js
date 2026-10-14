@@ -18,7 +18,7 @@ const profile = { label: "My profile", to: "/profile", icon: UserCircleIcon };
 export const MENU = {
     admin: [
         { label: "Dashboard", to: "/admin", icon: HomeIcon },
-        { label: "Users", to: "/admin/users", icon: UsersIcon, soon: true },
+        { label: "Users", to: "/admin/users", icon: UsersIcon },
         profile,
     ],
     property_manager: [
@@ -27,7 +27,6 @@ export const MENU = {
             label: "Houses",
             to: "/manager/houses",
             icon: BuildingOffice2Icon,
-            soon: true,
         },
         {
             label: "Reservations",
@@ -38,7 +37,6 @@ export const MENU = {
             label: "Tenants",
             to: "/manager/tenants",
             icon: UserGroupIcon,
-            soon: true,
         },
         {
             label: "Maintenance",
@@ -50,11 +48,10 @@ export const MENU = {
             to: "/manager/maintenance/history",
             icon: ClockIcon,
         },
-        { label: "Staff", to: "/manager/staff", icon: UsersIcon, soon: true },
+        { label: "Staff", to: "/manager/staff", icon: UsersIcon },
         profile,
     ],
     maintenance_staff: [
-        { label: "Dashboard", to: "/staff", icon: HomeIcon },
         {
             label: "Assigned requests",
             to: "/staff/requests",

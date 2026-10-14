@@ -1,0 +1,62 @@
+<?php
+
+namespace App\Http\Controllers\Api\Admin;
+
+use App\Enums\Role;
+use App\Http\Controllers\Controller;
+use App\Http\Requests\StoreUserRequest;
+use App\Http\Requests\UpdateUserRequest;
+use App\Http\Resources\UserResource;
+use App\Models\User;
+use App\Services\UserService;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Http\Response;
+
+/**
+ * M6 User Administration. The route group is role:admin; the rules are in UserService.
+ */
+class UserController extends Controller
+{
+    public function __construct(private UserService $users) {}
+
+    public function index(Request $request): AnonymousResourceCollection
+    {
+        $users = User::query()
+            ->when($request->query('search'), fn ($query, $search) => $query->where(
+                fn ($query) => $query->where('name', 'like', "%{$search}%")
+                    ->orWhere('email', 'like', "%{$search}%")
+                    ->orWhere('phone_number', 'like', "%{$search}%")
+            ))
+            ->when(Role::tryFrom((string) $request->query('role')), fn ($query, $role) => $query->where('role', $role))
+            ->orderBy('name')
+            ->paginate(15);
+
+        return UserResource::collection($users);
+    }
+
+    public function store(StoreUserRequest $request): JsonResponse
+    {
+        $user = $this->users->create($request->validated());
+
+        return (new UserResource($user))->response()->setStatusCode(201);
+    }
+
+    public function show(User $user): UserResource
+    {
+        return new UserResource($user);
+    }
+
+    public function update(UpdateUserRequest $request, User $user): UserResource
+    {
+        return new UserResource($this->users->update($user, $request->user(), $request->validated()));
+    }
+
+    public function destroy(Request $request, User $user): Response
+    {
+        $this->users->delete($user, $request->user());
+
+        return response()->noContent();
+    }
+}

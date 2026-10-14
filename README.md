@@ -30,7 +30,17 @@ composer install
 php artisan key:generate
 ```
 
-Then edit `.env` and set `DB_PORT`, `DB_USERNAME` and `DB_PASSWORD` for your MySQL server. From Phase 1 on, also run `php artisan migrate:fresh --seed` to create and fill the tables.
+Then edit `.env` and set `DB_PORT`, `DB_USERNAME` and `DB_PASSWORD` for your MySQL server, and create and fill the tables:
+
+```bash
+php artisan migrate:fresh --seed                # base data
+php artisan db:seed --class=DemoSeeder          # optional demo data
+```
+
+- **Base data** (`migrate:fresh --seed`): the 4 house models, the 850 units (all available) and one login per role. Reservations, payments and maintenance requests start empty.
+- **Demo data** (`DemoSeeder`, optional, run after the base data): a paid purchase by `tenant@` (the house becomes sold), a cancelled and an active reservation by `prospect@` with payments, and maintenance requests in every status. Use it before a demo or recording. Running it twice does nothing; start again with `migrate:fresh --seed`.
+
+Logins (password `password`): `admin@`, `manager@`, `staff.plumbing@`, `staff.electrical@`, `tenant@` and `prospect@luminest.test`.
 
 **Frontend:**
 

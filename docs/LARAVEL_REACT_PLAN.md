@@ -194,16 +194,21 @@ Use the schema in **SYSTEM_DOCUMENTATION.md §8.2** as-is: `users`, `house_types
   - `reservations`: `user_id`, `house_id`, `status` (`reserved`/`cancelled`/`paid`), `total_price` (unsigned integer snapshot), `cancelled_at`, `paid_at`, timestamps. No `decided_at`/`decided_by`.
   - `payments`: `reservation_id`, `receipt_number` (unique), `type` (`reservation_fee`/`instalment`/`final`), `amount`, `balance_after` (snapshot for the receipt), `method` (default `simulated`), `paid_at`, timestamps.
   - Balance is calculated (`total_price − sum(payments.amount)`), never stored on the reservation, so it can't drift. `balance_after` on each payment is only a historical snapshot for its receipt.
+- `reservations.user_id` and `payments.reservation_id` **restrict** on delete (not cascade), so payment records and house statuses can't be wiped by deleting a user (§5.7).
+- No `house_types.code` (only needed for the skipped legacy import) and no `users.email_verified_at` (no email verification).
 - No `users.owned_house`. Ownership = `houses.owner_id`.
 - Add `users.google_id` (nullable, unique) and `users.avatar_url` (nullable) for Phase 7. Make `users.password` nullable for Google-only accounts.
 - Store everything raw. **Never** `htmlspecialchars` before saving; React escapes output.
 
-**Seeders** (must produce a demo-ready database with `php artisan migrate:fresh --seed`):
+**Seeders.** `php artisan migrate:fresh --seed` gives the **base data** only: from the legacy app we keep just the house listing, so reservations, payments and maintenance requests start empty.
 
 - `HouseTypeSeeder`: the 4 models from SYSTEM_DOCUMENTATION §5.4 (with prices).
-- `HouseSeeder`: the 870 units, using the block layout in §5.3.
+- `HouseSeeder`: the 850 units, using the block layout in §5.3.
 - `UserSeeder`: one account per role, password `password`: `admin@`, `manager@`, `staff.plumbing@`, `staff.electrical@`, `tenant@`, `prospect@luminest.test`.
-- `DemoSeeder`: reservations in every status (`reserved` with a few instalments, `cancelled` with a forfeited fee, `paid`), with consistent payments, and maintenance requests in every status, so every screen has data during the video.
+
+**Demo data (on demand).** `php artisan db:seed --class=DemoSeeder`, run after the base seed (e.g. before recording the video). It is not part of `DatabaseSeeder`, and it skips itself when reservations already exist.
+
+- `DemoSeeder`: reservations in every status (`reserved` with a few instalments, `cancelled` with a forfeited fee, `paid` by `tenant@`, whose house becomes sold), with consistent payments, and maintenance requests in every status, so every screen has data during the video.
 
 Legacy data import is **not** required for the course. Skip SYSTEM_DOCUMENTATION §9 unless real data must be kept.
 
@@ -284,7 +289,7 @@ Base URL `/api`. JSON only. All routes except "public" require `auth:sanctum`. E
 | Method | Path | Notes |
 |---|---|---|
 | GET | `/api/admin/dashboard` | User counts by role and status |
-| GET/POST/GET/PUT/DELETE | `/api/admin/users[/{id}]` | `apiResource`. Expertise is required only for staff. Admin cannot delete or deactivate themselves. |
+| GET/POST/GET/PUT/DELETE | `/api/admin/users[/{id}]` | `apiResource`. Expertise is required only for staff. Admin cannot delete or deactivate themselves. Deleting a user with reservation history returns `422` (the FK restricts it so payment records survive); the admin deactivates them instead. |
 
 ---
 
@@ -342,7 +347,7 @@ Phases build modules in dependency order: Phases 0–1 are shared foundations, P
 | Phase | Scope | Acceptance criteria |
 |---|---|---|
 | **0. Scaffold** | Laravel 12 is already installed at the root. Add Sanctum (`php artisan install:api`), CORS + `SANCTUM_STATEFUL_DOMAINS`, Pint, Pest; remove the default Tailwind/Blade front-end assets (`resources/js`, `resources/css`, root `package.json`/`vite.config.js`), since React has its own Vite setup (Tailwind moves into `frontend/`). `frontend/`: Vite React, Tailwind v4 (`@tailwindcss/vite`) with brand tokens in `src/index.css`, Headless UI, Heroicons, clsx, react-hot-toast, React Router, TanStack Query, axios (`withCredentials`, `withXSRFToken`), ESLint + Prettier with `prettier-plugin-tailwindcss`. `.env.example` for both. README with setup commands. | `php artisan serve` + `npm run dev` both run. Frontend calls `GET /api/user` and gets 401. Lint passes. |
-| **1. Database** | Enums, migrations, models + relationships + casts + scopes, factories, all seeders. Keep Laravel's default `users`/`cache`/`jobs` migrations (they also create `sessions`, `cache` and `jobs`): `CACHE_STORE` and `QUEUE_CONNECTION` are still `database`, and Phase 2 login throttling uses the cache. | `migrate:fresh --seed` succeeds. 870 houses. One user per role. Tinker relationships work. |
+| **1. Database** | Enums, migrations, models + relationships + casts + scopes, factories, all seeders. Keep Laravel's default `users`/`cache`/`jobs` migrations (they also create `sessions`, `cache` and `jobs`): `CACHE_STORE` and `QUEUE_CONNECTION` are still `database`, and Phase 2 login throttling uses the cache. | `migrate:fresh --seed` succeeds. 850 houses. One user per role. Tinker relationships work. |
 | **2. Auth & shell** | Register/login/logout/user/profile/password endpoints + tests. `role` middleware. React AuthProvider, Login, Register, Profile, AppLayout with role sidebar, ProtectedRoute/RoleRoute, role redirect, 404 page. | Each seeded user logs in and lands on their dashboard. A wrong role gets 403 (API) or a redirect (UI). Inactive users cannot log in. |
 | **3. Catalog & reservations** | House-type endpoints, ReservationService (reserve/pay/cancel per §1.2) + Policy + tests, PDF receipt (dompdf). Landing, house detail, reserve flow, my reservations with pay modal and receipts, PM read-only reservations page. | Full §1.2 flow works in the UI. Tests cover: double booking blocked, fee < ₱5,000 rejected, instalment < ₱5,000 rejected unless it settles the balance, overpayment rejected, final payment sets `paid` + house `sold` + role `tenant`, cancel frees the unit and keeps payments, PM cannot modify reservations, receipt downloads as PDF only for allowed users. |
 | **4. Maintenance** | MaintenanceService (submit/assign/progress/resolve) + Policy + tests. Tenant pages, staff pages, PM queue + history. | Full §4.3 flow works. Staff cannot see or update unassigned requests (test). Expertise rule enforced (test). |
@@ -455,7 +460,7 @@ Each member presents the module(s) they own (§1.1) and explains **their module 
 | M5–M6 Property Management & User Administration | 2–3 | Dashboards, search/filter, user CRUD |
 | Quality & enhancements | 2 | Tests running, lint, instructor comments addressed (§9a), legacy defects fixed (§9b) |
 
-Record against a fresh `migrate:fresh --seed` database so the demo is predictable.
+Record against a fresh database (`php artisan migrate:fresh --seed && php artisan db:seed --class=DemoSeeder`) so the demo is predictable.
 
 ---
 

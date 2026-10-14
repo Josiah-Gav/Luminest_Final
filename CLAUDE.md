@@ -24,12 +24,15 @@ Real-estate management system for one subdivision: house reservations and purcha
 
 ## Status
 
-Phase 0 (scaffold) is done: Sanctum SPA cookie auth, CORS, Pest 3, and the React app in `frontend/` (React 19, Vite 8, Tailwind v4, ESLint + Prettier). There are no app migrations or models yet, and `SESSION_DRIVER=file` until the Phase 1 tables exist. The next step is Phase 1 (Database, plan §7).
+Phase 0 (scaffold) is done: Sanctum SPA cookie auth, CORS, Pest 3, and the React app in `frontend/` (React 19, Vite 8, Tailwind v4, ESLint + Prettier). `DB_CONNECTION=mariadb` (XAMPP MariaDB 10.4, port 3309).
+
+Phase 1 (database) is done: enums with status transitions in `app/Enums`, migrations, models (relationships, casts, scopes, calculated `total_paid`/`balance` on `Reservation`), factories, and seeders. `migrate:fresh --seed` gives base data only (4 house types, 850 available units, 6 logins); `db:seed --class=DemoSeeder` adds optional demo reservations, payments and maintenance requests in every status. Both are tested in `tests/Feature/Database/{BaseSeedTest,DemoSeedTest}.php`. `SESSION_DRIVER` is still `file`; the `sessions` table now exists if Phase 2 wants `database`. The next step is Phase 2 (Auth & shell, plan §7).
 
 ## Commands (after Phase 0)
 
 ```bash
-php artisan migrate:fresh --seed && php artisan serve   # repo root, :8000
+php artisan migrate:fresh --seed && php artisan serve   # repo root, :8000 (base data)
+php artisan db:seed --class=DemoSeeder                  # optional demo data, after the base seed
 cd frontend && npm run dev                              # :5173
 php artisan test
 ```

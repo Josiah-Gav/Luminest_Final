@@ -18,6 +18,7 @@ import MyReservations from "./pages/prospect/MyReservations";
 import Home from "./pages/public/Home";
 import HouseTypeDetail from "./pages/public/HouseTypeDetail";
 import Login from "./pages/public/Login";
+import OAuthCallback from "./pages/public/OAuthCallback";
 import NotFound from "./pages/public/NotFound";
 import Register from "./pages/public/Register";
 import Profile from "./pages/shared/Profile";
@@ -31,6 +32,9 @@ export default function AppRoutes() {
         <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/houses/:slug" element={<HouseTypeDetail />} />
+
+            {/* Google login lands here, already logged in, so not inside GuestRoute. */}
+            <Route path="/oauth/callback" element={<OAuthCallback />} />
 
             <Route element={<GuestRoute />}>
                 <Route path="/login" element={<Login />} />

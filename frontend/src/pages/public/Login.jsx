@@ -1,14 +1,25 @@
 import { useForm } from "react-hook-form";
 import toast from "react-hot-toast";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { useAuth } from "../../auth/useAuth";
 import AuthLayout from "../../components/layout/AuthLayout";
 import Button from "../../components/ui/Button";
 import FormError from "../../components/ui/FormError";
+import GoogleButton from "../../components/ui/GoogleButton";
 import Input from "../../components/ui/Input";
 import { applyServerErrors } from "../../utils/serverErrors";
 
+// ?error=<code> comes from the Google callback (GoogleAuthController).
+const GOOGLE_ERRORS = {
+    inactive:
+        "This account has been deactivated. Please contact the administrator.",
+    cancelled: "Google sign-in was cancelled.",
+    failed: "Google sign-in didn't work. Please try again.",
+};
+
 export default function Login() {
+    const [searchParams] = useSearchParams();
+    const googleError = GOOGLE_ERRORS[searchParams.get("error")];
     const { login } = useAuth();
     const form = useForm({ defaultValues: { email: "", password: "" } });
     const {
@@ -48,7 +59,9 @@ export default function Login() {
                 noValidate
                 className="space-y-5"
             >
-                <FormError message={errors.root?.server?.message} />
+                <FormError
+                    message={errors.root?.server?.message ?? googleError}
+                />
                 <Input
                     label="Email"
                     type="email"
@@ -70,6 +83,7 @@ export default function Login() {
                     {isSubmitting ? "Logging in…" : "Log in"}
                 </Button>
             </form>
+            <GoogleButton />
         </AuthLayout>
     );
 }

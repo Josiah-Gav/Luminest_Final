@@ -5,6 +5,7 @@ import { useAuth } from "../../auth/useAuth";
 import AuthLayout from "../../components/layout/AuthLayout";
 import Button from "../../components/ui/Button";
 import FormError from "../../components/ui/FormError";
+import GoogleButton from "../../components/ui/GoogleButton";
 import Input from "../../components/ui/Input";
 import { applyServerErrors } from "../../utils/serverErrors";
 
@@ -109,6 +110,7 @@ export default function Register() {
                     {isSubmitting ? "Creating account…" : "Create account"}
                 </Button>
             </form>
+            <GoogleButton />
         </AuthLayout>
     );
 }

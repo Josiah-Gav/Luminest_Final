@@ -13,6 +13,7 @@ use Symfony\Component\HttpFoundation\Response;
  */
 class EnsureUserHasRole
 {
+    /** Lets the request through only if the user's role is one of the listed roles; otherwise 403. */
     public function handle(Request $request, Closure $next, string ...$roles): Response
     {
         // Role::from() throws on a typo in a route definition instead of silently letting nobody (or everybody) in.

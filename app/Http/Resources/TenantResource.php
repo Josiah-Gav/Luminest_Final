@@ -14,6 +14,8 @@ use Illuminate\Http\Resources\Json\JsonResource;
 class TenantResource extends JsonResource
 {
     /**
+     * Contact details and active flag, plus the tenant's houses when loaded. No password or role.
+     *
      * @return array<string, mixed>
      */
     public function toArray(Request $request): array

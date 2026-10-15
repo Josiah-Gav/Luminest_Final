@@ -12,6 +12,7 @@ use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
  */
 class HouseController extends Controller
 {
+    /** GET /api/tenant/houses: only the houses this tenant owns. */
     public function index(Request $request): AnonymousResourceCollection
     {
         return HouseResource::collection($request->user()->houses()->with('houseType')->get());

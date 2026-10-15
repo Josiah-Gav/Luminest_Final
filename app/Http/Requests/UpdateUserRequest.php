@@ -15,6 +15,7 @@ use Illuminate\Validation\Rules\Password;
  */
 class UpdateUserRequest extends FormRequest
 {
+    /** Normalizes the phone number, but only when one was sent. */
     protected function prepareForValidation(): void
     {
         if ($this->has('phone_number')) {
@@ -23,6 +24,9 @@ class UpdateUserRequest extends FormRequest
     }
 
     /**
+     * Same fields as creating a user, all optional; email and phone must be unique except for this
+     * user's own row, and a blank password keeps the current one. Self-protection rules are in UserService.
+     *
      * @return array<string, mixed>
      */
     public function rules(): array
@@ -41,6 +45,8 @@ class UpdateUserRequest extends FormRequest
     }
 
     /**
+     * Friendlier error text for a badly formatted phone number.
+     *
      * @return array<string, string>
      */
     public function messages(): array

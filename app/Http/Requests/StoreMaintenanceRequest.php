@@ -13,6 +13,8 @@ use Illuminate\Validation\Rule;
 class StoreMaintenanceRequest extends FormRequest
 {
     /**
+     * Title, description, category and priority are required, and the house must be one this tenant owns.
+     *
      * @return array<string, mixed>
      */
     public function rules(): array
@@ -28,6 +30,8 @@ class StoreMaintenanceRequest extends FormRequest
     }
 
     /**
+     * Friendlier error text when the house is not the tenant's own.
+     *
      * @return array<string, string>
      */
     public function messages(): array

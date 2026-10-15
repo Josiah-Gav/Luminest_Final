@@ -12,6 +12,8 @@ use Illuminate\Http\Resources\Json\JsonResource;
 class PaymentResource extends JsonResource
 {
     /**
+     * One payment: receipt number, type, amount, the balance left after it and when it was paid.
+     *
      * @return array<string, mixed>
      */
     public function toArray(Request $request): array

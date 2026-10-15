@@ -12,6 +12,9 @@ use Illuminate\Http\Resources\Json\JsonResource;
 class MaintenanceRequestResource extends JsonResource
 {
     /**
+     * The request's details, status and dates. House, tenant (id and name only) and assigned staff
+     * appear when loaded; staff is null while unassigned.
+     *
      * @return array<string, mixed>
      */
     public function toArray(Request $request): array

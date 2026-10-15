@@ -19,8 +19,10 @@ use Illuminate\Http\Response;
  */
 class UserController extends Controller
 {
+    /** Receives UserService, which holds the rules for creating, editing and deleting users. */
     public function __construct(private UserService $users) {}
 
+    /** GET /api/admin/users: users by name, 15 per page, filtered by ?search= (name, email, phone) and ?role=. */
     public function index(Request $request): AnonymousResourceCollection
     {
         $users = User::query()
@@ -36,6 +38,7 @@ class UserController extends Controller
         return UserResource::collection($users);
     }
 
+    /** POST /api/admin/users: creates a user with any role (rules in UserService::create). */
     public function store(StoreUserRequest $request): JsonResponse
     {
         $user = $this->users->create($request->validated());
@@ -43,16 +46,19 @@ class UserController extends Controller
         return (new UserResource($user))->response()->setStatusCode(201);
     }
 
+    /** GET /api/admin/users/{id}: one user's details. */
     public function show(User $user): UserResource
     {
         return new UserResource($user);
     }
 
+    /** PUT/PATCH /api/admin/users/{id}: edits, activates or deactivates a user (rules in UserService::update). */
     public function update(UpdateUserRequest $request, User $user): UserResource
     {
         return new UserResource($this->users->update($user, $request->user(), $request->validated()));
     }
 
+    /** DELETE /api/admin/users/{id}: deletes a user unless it is the admin themselves or has reservations (UserService::delete). */
     public function destroy(Request $request, User $user): Response
     {
         $this->users->delete($user, $request->user());

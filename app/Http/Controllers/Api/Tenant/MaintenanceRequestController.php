@@ -17,8 +17,10 @@ use Illuminate\Support\Facades\Gate;
  */
 class MaintenanceRequestController extends Controller
 {
+    /** Receives MaintenanceService, which holds the maintenance rules. */
     public function __construct(private MaintenanceService $maintenance) {}
 
+    /** GET /api/tenant/maintenance-requests: the tenant's own requests with house and assigned staff, newest first. */
     public function index(Request $request): AnonymousResourceCollection
     {
         $requests = $request->user()->maintenanceRequests()
@@ -29,6 +31,7 @@ class MaintenanceRequestController extends Controller
         return MaintenanceRequestResource::collection($requests);
     }
 
+    /** POST /api/tenant/maintenance-requests: files a new request as pending (rules in MaintenanceService::submit). */
     public function store(StoreMaintenanceRequest $request): JsonResponse
     {
         $created = $this->maintenance->submit($request->user(), $request->validated());
@@ -36,6 +39,7 @@ class MaintenanceRequestController extends Controller
         return $this->respond($created, 201);
     }
 
+    /** POST /api/tenant/maintenance-requests/{id}/resolve: the owning tenant confirms completed work (completed → resolved). */
     public function resolve(MaintenanceRequest $maintenanceRequest): JsonResponse
     {
         Gate::authorize('resolve', $maintenanceRequest);
@@ -43,6 +47,7 @@ class MaintenanceRequestController extends Controller
         return $this->respond($this->maintenance->resolve($maintenanceRequest), 200);
     }
 
+    /** Returns the request with its house and staff loaded, using the given HTTP status. */
     private function respond(MaintenanceRequest $request, int $status): JsonResponse
     {
         $request->load(['house.houseType', 'staff']);

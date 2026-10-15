@@ -14,6 +14,7 @@ use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
  */
 class HouseController extends Controller
 {
+    /** GET /api/manager/houses: units by block and lot, 15 per page, filtered by ?search=, ?status= and ?house_type=. */
     public function index(Request $request): AnonymousResourceCollection
     {
         $houses = House::with(['houseType', 'owner'])

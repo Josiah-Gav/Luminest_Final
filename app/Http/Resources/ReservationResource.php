@@ -12,6 +12,9 @@ use Illuminate\Http\Resources\Json\JsonResource;
 class ReservationResource extends JsonResource
 {
     /**
+     * Status, price, calculated total paid and balance, the unit, its payments and key dates.
+     * The buyer's name and email appear only when the user relation is loaded (the manager's view).
+     *
      * @return array<string, mixed>
      */
     public function toArray(Request $request): array

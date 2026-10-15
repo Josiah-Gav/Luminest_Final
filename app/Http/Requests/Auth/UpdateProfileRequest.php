@@ -8,6 +8,7 @@ use Illuminate\Validation\Rule;
 
 class UpdateProfileRequest extends FormRequest
 {
+    /** Normalizes the phone number first, so the unique check compares like with like. */
     protected function prepareForValidation(): void
     {
         $this->merge(['phone_number' => PhoneNumber::normalize($this->input('phone_number'))]);
@@ -30,6 +31,8 @@ class UpdateProfileRequest extends FormRequest
     }
 
     /**
+     * Friendlier error text for a badly formatted phone number.
+     *
      * @return array<string, string>
      */
     public function messages(): array

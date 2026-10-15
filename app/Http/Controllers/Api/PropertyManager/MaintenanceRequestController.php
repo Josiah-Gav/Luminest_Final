@@ -17,8 +17,10 @@ use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
  */
 class MaintenanceRequestController extends Controller
 {
+    /** Receives MaintenanceService, which holds the assignment rules. */
     public function __construct(private MaintenanceService $maintenance) {}
 
+    /** GET /api/manager/maintenance-requests: the open queue, or resolved history with ?scope=closed. */
     public function index(Request $request): AnonymousResourceCollection
     {
         $query = MaintenanceRequest::with(['house.houseType', 'tenant', 'staff'])->latest();
@@ -31,6 +33,7 @@ class MaintenanceRequestController extends Controller
         return MaintenanceRequestResource::collection($requests);
     }
 
+    /** PATCH /api/manager/maintenance-requests/{id}/assignment: assigns, swaps or (staff_id null) unassigns staff (rules in MaintenanceService::assign). */
     public function assign(AssignStaffRequest $request, MaintenanceRequest $maintenanceRequest): MaintenanceRequestResource
     {
         $staff = $request->validated('staff_id') ? User::find($request->validated('staff_id')) : null;

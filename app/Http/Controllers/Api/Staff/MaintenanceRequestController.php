@@ -16,8 +16,10 @@ use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
  */
 class MaintenanceRequestController extends Controller
 {
+    /** Receives MaintenanceService, which holds the status-transition rules. */
     public function __construct(private MaintenanceService $maintenance) {}
 
+    /** GET /api/staff/maintenance-requests: the staff member's active work, or finished work with ?scope=history. */
     public function index(Request $request): AnonymousResourceCollection
     {
         $mine = $request->user()->assignedRequests()->with(['house.houseType', 'tenant']);
@@ -29,6 +31,7 @@ class MaintenanceRequestController extends Controller
         return MaintenanceRequestResource::collection($requests);
     }
 
+    /** PATCH /api/staff/maintenance-requests/{id}: moves the request forward and saves notes (rules in MaintenanceService::updateProgress). */
     public function update(UpdateProgressRequest $request, int $id): MaintenanceRequestResource
     {
         $assigned = $request->user()->assignedRequests()->findOrFail($id);

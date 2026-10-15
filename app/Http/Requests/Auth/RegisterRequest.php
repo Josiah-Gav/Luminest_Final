@@ -17,6 +17,8 @@ class RegisterRequest extends FormRequest
     }
 
     /**
+     * Validates name, a unique email, a unique 09XXXXXXXXX phone, and a confirmed password that meets the default strength rules.
+     *
      * @return array<string, mixed>
      */
     public function rules(): array
@@ -30,6 +32,8 @@ class RegisterRequest extends FormRequest
     }
 
     /**
+     * Friendlier error text for a badly formatted phone number.
+     *
      * @return array<string, string>
      */
     public function messages(): array

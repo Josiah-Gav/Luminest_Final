@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\Gate;
  */
 class ReceiptController extends Controller
 {
+    /** GET /api/payments/{id}/receipt: streams the PDF; only the payer, a property manager or an admin (ReservationPolicy::downloadReceipt). */
     public function __invoke(Payment $payment): Response
     {
         $payment->load('reservation.user', 'reservation.house.houseType');

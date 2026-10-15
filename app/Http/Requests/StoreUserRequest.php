@@ -14,12 +14,16 @@ use Illuminate\Validation\Rules\Password;
  */
 class StoreUserRequest extends FormRequest
 {
+    /** Normalizes the phone number first, so the unique check compares like with like. */
     protected function prepareForValidation(): void
     {
         $this->merge(['phone_number' => PhoneNumber::normalize($this->input('phone_number'))]);
     }
 
     /**
+     * Name, unique email, password and role are required; phone, expertise and is_active are optional.
+     * Whether expertise is required for the chosen role is checked in UserService.
+     *
      * @return array<string, mixed>
      */
     public function rules(): array
@@ -36,6 +40,8 @@ class StoreUserRequest extends FormRequest
     }
 
     /**
+     * Friendlier error text for a badly formatted phone number.
+     *
      * @return array<string, string>
      */
     public function messages(): array

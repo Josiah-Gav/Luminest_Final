@@ -12,6 +12,7 @@ use Illuminate\Http\Resources\Json\JsonResource;
  */
 class DashboardController extends Controller
 {
+    /** GET /api/admin/dashboard: counts of all users, active vs inactive, and per role. */
     public function __invoke(): JsonResource
     {
         $byRole = [];

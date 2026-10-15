@@ -17,6 +17,7 @@ use Illuminate\Http\Resources\Json\JsonResource;
  */
 class DashboardController extends Controller
 {
+    /** GET /api/manager/dashboard: house and maintenance counts, active reservations, money collected and outstanding, and the 5 newest requests. */
     public function __invoke(): JsonResource
     {
         $houses = ['total' => House::count()];

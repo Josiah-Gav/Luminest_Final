@@ -13,6 +13,8 @@ use Illuminate\Validation\Rule;
 class AssignStaffRequest extends FormRequest
 {
     /**
+     * staff_id must be sent: either null (unassign) or the id of an active maintenance staff member.
+     *
      * @return array<string, mixed>
      */
     public function rules(): array
@@ -29,6 +31,8 @@ class AssignStaffRequest extends FormRequest
     }
 
     /**
+     * Friendlier error text when the chosen user is not active maintenance staff.
+     *
      * @return array<string, string>
      */
     public function messages(): array

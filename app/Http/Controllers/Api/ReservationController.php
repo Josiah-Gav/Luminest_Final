@@ -18,8 +18,10 @@ use Illuminate\Support\Facades\Gate;
  */
 class ReservationController extends Controller
 {
+    /** Receives ReservationService, which holds all the reservation and payment rules. */
     public function __construct(private ReservationService $reservations) {}
 
+    /** GET /api/reservations: the logged-in user's own reservations with payments, newest first. */
     public function index(Request $request): AnonymousResourceCollection
     {
         $reservations = $request->user()->reservations()
@@ -31,6 +33,7 @@ class ReservationController extends Controller
         return ReservationResource::collection($reservations);
     }
 
+    /** POST /api/reservations: reserves a unit and pays the reservation fee (rules in ReservationService::reserve). */
     public function store(StoreReservationRequest $request): JsonResponse
     {
         $reservation = $this->reservations->reserve(
@@ -42,6 +45,7 @@ class ReservationController extends Controller
         return $this->respond($reservation, 201);
     }
 
+    /** POST /api/reservations/{id}/payments: pays an instalment; only the owner (rules in ReservationService::pay). */
     public function pay(StorePaymentRequest $request, Reservation $reservation): JsonResponse
     {
         Gate::authorize('pay', $reservation);
@@ -51,6 +55,7 @@ class ReservationController extends Controller
         return $this->respond($reservation, 201);
     }
 
+    /** POST /api/reservations/{id}/cancel: cancels an active reservation and frees the unit; only the owner (R6). */
     public function cancel(Reservation $reservation): JsonResponse
     {
         Gate::authorize('cancel', $reservation);

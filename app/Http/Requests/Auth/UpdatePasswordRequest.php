@@ -8,6 +8,8 @@ use Illuminate\Validation\Rules\Password;
 class UpdatePasswordRequest extends FormRequest
 {
     /**
+     * The current password must be correct, and the new one confirmed and strong enough.
+     *
      * @return array<string, mixed>
      */
     public function rules(): array

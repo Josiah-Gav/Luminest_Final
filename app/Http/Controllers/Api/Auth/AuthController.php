@@ -19,6 +19,7 @@ use Illuminate\Support\Facades\Auth;
  */
 class AuthController extends Controller
 {
+    /** POST /api/register: creates a prospect account and logs it in at once. */
     public function register(RegisterRequest $request): JsonResponse
     {
         // Self-registration always creates a prospect; only an admin can give other roles.
@@ -30,6 +31,7 @@ class AuthController extends Controller
         return (new UserResource($user))->response()->setStatusCode(201);
     }
 
+    /** POST /api/login: checks the credentials (throttled, inactive accounts refused) and starts a session. */
     public function login(LoginRequest $request): UserResource
     {
         $request->authenticate();
@@ -40,6 +42,7 @@ class AuthController extends Controller
         return new UserResource($request->user());
     }
 
+    /** POST /api/logout: destroys the server-side session so the old cookie stops working. */
     public function logout(Request $request): Response
     {
         Auth::guard('web')->logout();
@@ -54,6 +57,7 @@ class AuthController extends Controller
         return response()->noContent();
     }
 
+    /** GET /api/user: returns the logged-in user; the React app calls it on load to restore the session. */
     public function user(Request $request): UserResource
     {
         return new UserResource($request->user());

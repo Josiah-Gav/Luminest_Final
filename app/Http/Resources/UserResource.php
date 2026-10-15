@@ -15,6 +15,8 @@ use Illuminate\Http\Resources\Json\JsonResource;
 class UserResource extends JsonResource
 {
     /**
+     * Id, name, contact details, role, expertise, active flag, avatar and created date. Never the password or Google id.
+     *
      * @return array<string, mixed>
      */
     public function toArray(Request $request): array

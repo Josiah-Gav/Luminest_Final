@@ -14,6 +14,8 @@ use Illuminate\Http\Resources\Json\JsonResource;
 class StaffResource extends JsonResource
 {
     /**
+     * Id, name and expertise only (no email or phone), plus the request counts when they were queried.
+     *
      * @return array<string, mixed>
      */
     public function toArray(Request $request): array

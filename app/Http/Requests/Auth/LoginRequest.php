@@ -15,6 +15,8 @@ class LoginRequest extends FormRequest
     private const MAX_ATTEMPTS = 5;
 
     /**
+     * Email and password are required; whether they are correct is checked in authenticate().
+     *
      * @return array<string, mixed>
      */
     public function rules(): array
@@ -56,6 +58,8 @@ class LoginRequest extends FormRequest
     }
 
     /**
+     * Blocks the attempt with a 429 after 5 failures for this email + IP (brute-force protection).
+     *
      * @throws ValidationException
      */
     private function ensureIsNotRateLimited(): void
@@ -71,6 +75,7 @@ class LoginRequest extends FormRequest
         ])->status(429);
     }
 
+    /** The rate-limit bucket: lowercased email plus IP address, so one person's typos don't lock others out. */
     private function throttleKey(): string
     {
         return Str::transliterate(Str::lower($this->string('email')).'|'.$this->ip());

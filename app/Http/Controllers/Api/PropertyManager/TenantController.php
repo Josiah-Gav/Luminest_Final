@@ -13,6 +13,7 @@ use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
  */
 class TenantController extends Controller
 {
+    /** GET /api/manager/tenants: tenants by name with the houses they own, optionally filtered by ?search=. */
     public function index(Request $request): AnonymousResourceCollection
     {
         $tenants = User::tenants()

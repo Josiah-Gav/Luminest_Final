@@ -14,6 +14,8 @@ use Illuminate\Http\Resources\Json\JsonResource;
 class ManagerHouseResource extends JsonResource
 {
     /**
+     * Block, lot, status, model name and purchase date, plus the owner's id and name (null until sold).
+     *
      * @return array<string, mixed>
      */
     public function toArray(Request $request): array

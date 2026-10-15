@@ -12,6 +12,7 @@ use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
  */
 class ReservationController extends Controller
 {
+    /** GET /api/manager/reservations: every reservation with buyer, unit and payments, newest first (read-only, R7). */
     public function index(): AnonymousResourceCollection
     {
         $reservations = Reservation::with(['user', 'house.houseType', 'payments'])

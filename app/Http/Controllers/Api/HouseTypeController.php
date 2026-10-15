@@ -13,6 +13,7 @@ use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
  */
 class HouseTypeController extends Controller
 {
+    /** GET /api/house-types: the four models, cheapest first, each with its count of still-available units. */
     public function index(): AnonymousResourceCollection
     {
         $types = HouseType::withCount(['houses as available_units_count' => fn ($query) => $query->available()])
@@ -22,6 +23,7 @@ class HouseTypeController extends Controller
         return HouseTypeResource::collection($types);
     }
 
+    /** GET /api/house-types/{slug}: one model with its available units (block/lot) for the reserve form. */
     public function show(HouseType $houseType): HouseTypeResource
     {
         // Only the units someone can still reserve, for the unit dropdown.

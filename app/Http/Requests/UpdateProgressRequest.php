@@ -13,6 +13,8 @@ use Illuminate\Validation\Rule;
 class UpdateProgressRequest extends FormRequest
 {
     /**
+     * Staff may only set in_progress or completed (never resolved), with optional notes of up to 2000 characters.
+     *
      * @return array<string, mixed>
      */
     public function rules(): array

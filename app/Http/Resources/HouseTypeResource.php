@@ -12,6 +12,8 @@ use Illuminate\Http\Resources\Json\JsonResource;
 class HouseTypeResource extends JsonResource
 {
     /**
+     * Model details and price; the list adds an available-unit count, the detail page adds the units (id, block, lot).
+     *
      * @return array<string, mixed>
      */
     public function toArray(Request $request): array

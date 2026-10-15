@@ -13,6 +13,7 @@ use Illuminate\Http\Response;
  */
 class ProfileController extends Controller
 {
+    /** PUT /api/profile: updates the user's own name, email and phone (validated by UpdateProfileRequest). */
     public function update(UpdateProfileRequest $request): UserResource
     {
         $request->user()->update($request->validated());
@@ -20,6 +21,7 @@ class ProfileController extends Controller
         return new UserResource($request->user());
     }
 
+    /** PUT /api/profile/password: changes the password after the current one is confirmed (UpdatePasswordRequest). */
     public function updatePassword(UpdatePasswordRequest $request): Response
     {
         // Hashed by the "hashed" cast on User.

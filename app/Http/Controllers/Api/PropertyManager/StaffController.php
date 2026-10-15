@@ -16,8 +16,10 @@ use Illuminate\Http\Response;
  */
 class StaffController extends Controller
 {
+    /** Receives StaffService, which releases a demoted staff member's open work. */
     public function __construct(private StaffService $staff) {}
 
+    /** GET /api/manager/staff: active maintenance staff by name, with counts of their active and finished requests. */
     public function index(): AnonymousResourceCollection
     {
         $staff = User::staff()
@@ -33,7 +35,8 @@ class StaffController extends Controller
     }
 
     /**
-     * Demote: back to prospect, and their open requests return to the queue.
+     * DELETE /api/manager/staff/{id}: demotes the staff member to prospect and returns their open
+     * requests to the queue (StaffService::demote). A user who is not staff gives 404.
      */
     public function destroy(User $user): Response
     {

@@ -13,9 +13,12 @@ use Illuminate\Validation\ValidationException;
  */
 class UserService
 {
+    /** Receives StaffService, used to release a staff member's open work when they stop being staff. */
     public function __construct(private StaffService $staff) {}
 
     /**
+     * Admin creates a user with any role; expertise is kept only for maintenance staff.
+     *
      * @param  array<string, mixed>  $data  validated by StoreUserRequest
      */
     public function create(array $data): User
@@ -112,6 +115,9 @@ class UserService
         DB::table('sessions')->where('user_id', $user->id)->delete();
     }
 
+    /**
+     * Stops with a 422 that shows under the form field.
+     */
     private function fail(string $field, string $message): never
     {
         throw ValidationException::withMessages([$field => $message]);

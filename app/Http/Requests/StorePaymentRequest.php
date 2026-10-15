@@ -11,6 +11,8 @@ use Illuminate\Foundation\Http\FormRequest;
 class StorePaymentRequest extends FormRequest
 {
     /**
+     * The amount must be a whole number of pesos; the ₱5,000 minimum and balance limit are checked in ReservationService::pay().
+     *
      * @return array<string, mixed>
      */
     public function rules(): array

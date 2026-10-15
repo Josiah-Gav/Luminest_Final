@@ -14,6 +14,8 @@ use Illuminate\Http\Resources\Json\JsonResource;
 class HouseResource extends JsonResource
 {
     /**
+     * Just enough to name a unit: id, block, lot and the house model's name.
+     *
      * @return array<string, mixed>
      */
     public function toArray(Request $request): array

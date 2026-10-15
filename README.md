@@ -61,6 +61,25 @@ cd frontend && npm run dev        # app on http://localhost:5173
 
 Open http://localhost:5173. Use `localhost` for both apps, never `127.0.0.1` for one of them: Sanctum's login cookies only work when both run on the same host.
 
+## Google login setup
+
+"Continue with Google" is optional; without these keys the rest of the app works as usual.
+
+1. In the [Google Cloud Console](https://console.cloud.google.com/) create a project (or pick one), then open **APIs & Services → OAuth consent screen** and set it up (External, add your Google account as a test user).
+2. Open **Credentials → Create credentials → OAuth client ID**, application type **Web application**.
+3. Under **Authorized redirect URIs** add `http://localhost:8000/auth/google/callback`.
+4. Copy the client ID and secret into the repo-root `.env`:
+
+```env
+GOOGLE_CLIENT_ID=
+GOOGLE_CLIENT_SECRET=
+GOOGLE_REDIRECT_URI=http://localhost:8000/auth/google/callback
+```
+
+5. Restart `php artisan serve`. The redirect URI in `.env` must match the one in the Console exactly.
+
+New Google users become prospects. A Google account whose email already exists is linked to that user, but only when Google reports the email as verified. Deactivated accounts cannot log in this way.
+
 ## Quality checks
 
 ```bash
